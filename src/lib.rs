@@ -54,6 +54,10 @@ pub mod window;
 #[doc(inline)]
 pub use window::*;
 
+pub mod headless;
+#[doc(inline)]
+pub use headless::*;
+
 pub mod gui;
 #[doc(inline)]
 pub use gui::*;

@@ -1,0 +1,12 @@
+[package]
+name = "headless"
+version = "0.1.0"
+authors = ["Asger Nyman Christiansen <asgernyman@gmail.com>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+three-d = { path = "../../", default-features = false, features=["glutin-window"] }
+log = "0.4"

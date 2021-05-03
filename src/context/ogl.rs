@@ -12,6 +12,7 @@ pub type Shader = u32;
 pub type Program = u32;
 pub type Buffer = u32;
 pub type Framebuffer = u32;
+pub type Renderbuffer = u32;
 pub type Texture = u32;
 pub type VertexArrayObject = u32;
 pub type Sync = consts::types::GLsync;
@@ -551,6 +552,43 @@ impl Context {
                 mask,
                 filter,
             );
+        }
+    }
+
+    pub fn create_headless_buffers(&self, width: usize, height: usize) -> Option<(crate::context::Framebuffer, crate::context::Renderbuffer)> {
+        // inspired by https://github.com/rust-windowing/glutin/blob/bab33a84dfb094ff65c059400bed7993434638e2/glutin_examples/examples/headless.rs#L89-L113
+        let mut fb = 0;
+        let mut render_buf = 0;
+        unsafe {
+            // Using the fb backing a pbuffer is very much a bad idea. Fails on
+            // many platforms, and is deprecated. Better just make your own fb.
+            //
+            // Surfaceless doesn't come with a surface, as the name implies, so
+            // you must make your own fb.
+            //
+            // Making an fb is not neccesary with osmesa, however, can't be bothered
+            // to have a different code path.
+            self.inner.GenRenderbuffers(1, &mut render_buf);
+            self.inner.BindRenderbuffer(consts::RENDERBUFFER, render_buf);
+            self.inner.RenderbufferStorage(consts::RENDERBUFFER, consts::RGB8, width as _, height as _);
+            self.inner.GenFramebuffers(1, &mut fb);
+            self.inner.BindFramebuffer(consts::FRAMEBUFFER, fb);
+            self.inner.FramebufferRenderbuffer(
+                consts::FRAMEBUFFER,
+                consts::COLOR_ATTACHMENT0,
+                consts::RENDERBUFFER,
+                render_buf,
+            );
+
+            self.inner.Viewport(0, 0, width as _, height as _);
+        }
+        Some((fb, render_buf))
+    }
+
+    pub fn delete_headless_target(&self, framebuffer_id: crate::context::Framebuffer, renderbuffer_id: crate::context::Renderbuffer) {
+        unsafe {
+            self.inner.DeleteFramebuffers(1, &framebuffer_id);
+            self.inner.DeleteRenderbuffers(1, &renderbuffer_id);
         }
     }
 

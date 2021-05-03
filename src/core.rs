@@ -49,6 +49,11 @@ pub enum Error {
         /// Error message
         message: String,
     },
+    /// An error when using a headless render target.
+    HeadlessTargetError {
+        /// Error message
+        message: String,
+    },
     /// An error when using a texture.
     TextureError {
         /// Error message

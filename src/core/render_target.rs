@@ -99,12 +99,39 @@ impl Screen {
         Ok(())
     }
 
+    pub fn write_with_framebuffer<F: FnOnce() -> Result<(), Error>>(
+        context: &Context,
+        fb: &crate::context::Framebuffer,
+        clear_state: ClearState,
+        render: F,
+    ) -> Result<(), Error> {
+        context.bind_framebuffer(consts::DRAW_FRAMEBUFFER, Some(fb));
+        clear(context, &clear_state);
+        render()?;
+        Ok(())
+    }
+
     ///
     /// Returns the RGBA color values from the screen as a list of bytes (one byte for each color channel).
     ///
     pub fn read_color(context: &Context, viewport: Viewport) -> Result<Vec<u8>, Error> {
         let mut pixels = vec![0u8; viewport.width * viewport.height * 4];
         context.bind_framebuffer(consts::READ_FRAMEBUFFER, None);
+        context.read_pixels_with_u8_data(
+            viewport.x as u32,
+            viewport.y as u32,
+            viewport.width as u32,
+            viewport.height as u32,
+            consts::RGBA,
+            consts::UNSIGNED_BYTE,
+            &mut pixels,
+        );
+        Ok(pixels)
+    }
+
+    pub fn read_color_with_framebuffer(context: &Context, fb: &crate::context::Framebuffer, viewport: Viewport) -> Result<Vec<u8>, Error> {
+        let mut pixels = vec![0u8; viewport.width * viewport.height * 4];
+        context.bind_framebuffer(consts::READ_FRAMEBUFFER, Some(fb));
         context.read_pixels_with_u8_data(
             viewport.x as u32,
             viewport.y as u32,
@@ -490,6 +517,41 @@ impl Drop for RenderTargetArray<'_, '_> {
     }
 }
 
+pub struct HeadlessTarget {
+    pub width: usize,
+    pub height: usize,
+    pub framebuffer_id: crate::context::Framebuffer,
+    context: Context,
+    renderbuffer_id: crate::context::Renderbuffer,
+}
+
+impl HeadlessTarget {
+    ///
+    /// Constructs a new headless render target that enables rendering into an off-screen render buffer.
+    ///
+    pub fn new(
+        context: &Context,
+        width: usize,
+        height: usize,
+    ) -> Result<Self, Error> {
+        let cloned_context = context.clone();
+        let (frame_buf, render_buf) = new_headless_target(&cloned_context, width, height)?;
+        Ok(Self {
+            context: cloned_context,
+            width,
+            height,
+            framebuffer_id: frame_buf,
+            renderbuffer_id: render_buf,
+        })
+    }
+}
+
+impl Drop for HeadlessTarget {
+    fn drop(&mut self) {
+        self.context.delete_headless_target(self.framebuffer_id, self.renderbuffer_id);
+    }
+}
+
 fn new_framebuffer(context: &Context) -> Result<crate::context::Framebuffer, Error> {
     Ok(context
         .create_framebuffer()
@@ -588,4 +650,12 @@ fn get_copy_array_effect(context: &Context) -> Result<&ImageEffect, Error> {
         }
         Ok(COPY_EFFECT.as_ref().unwrap())
     }
+}
+
+fn new_headless_target(context: &Context, width: usize, height: usize) -> Result<(crate::context::Framebuffer, crate::context::Renderbuffer), Error> {
+    Ok(context
+        .create_headless_buffers(width, height)
+        .ok_or_else(|| Error::HeadlessTargetError {
+            message: "Failed to create headless target".to_string(),
+        })?)
 }
