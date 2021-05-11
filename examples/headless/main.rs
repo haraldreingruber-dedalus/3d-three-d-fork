@@ -5,7 +5,7 @@ fn main() {
     let viewport = Viewport::new_at_origo(1280, 720);
 
     // create headless graphic context
-    let headless_context = HeadlessContext::new().unwrap();
+    let mut headless_context = HeadlessContext::new().unwrap();
     // Get the graphics context from the HeadlessContext
     let context = headless_context.gl().unwrap();
 

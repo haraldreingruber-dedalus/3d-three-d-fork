@@ -1,40 +1,62 @@
-use crate::Context;
 use glutin::event_loop::EventLoop;
-use glutin::ContextBuilder;
-use glutin::*;
+use glutin::{ContextBuilder, ContextCurrentState, CreationError, PossiblyCurrent, NotCurrent};
 use glutin::dpi::PhysicalSize;
 
+use crate::Context;
+use glutin::platform::windows::EventLoopExtWindows;
+
+///
+/// Error message from the [headless](crate::headless) module.
+///
+#[derive(Debug)]
+pub enum HeadlessError {
+    GlNotInitialized,
+}
+
 pub struct HeadlessContext {
-    _headless_context: glutin::Context<PossiblyCurrent>,
-    gl: crate::Context,
+    current_context: Option<glutin::Context<PossiblyCurrent>>,
+    gl: Option<crate::Context>,
 }
 
 impl HeadlessContext {
     ///
-    /// Constructs a new headless context
+    /// Prepares a headless context wrapper
     ///
-    pub fn new() -> Result<HeadlessContext, ()> {
-        // inspired by https://github.com/rust-windowing/glutin/blob/bab33a84dfb094ff65c059400bed7993434638e2/glutin_examples/examples/headless.rs#L80-L87
-        let cb = ContextBuilder::new();
-        let (headless_context, _el) = build_context(cb).unwrap();
-        let headless_context = unsafe { headless_context.make_current().unwrap() };
-
-        let gl = Context::load_with(|ptr| headless_context.get_proc_address(ptr) as *const std::os::raw::c_void);
-
+    pub fn new() -> Result<HeadlessContext, HeadlessError> {
         Ok(HeadlessContext {
-            _headless_context: headless_context,
-            gl,
+            current_context: None,
+            gl: None,
         })
     }
 
     ///
-    /// Returns the graphics context for this window.
+    /// Constructs a new headless context
     ///
-    pub fn gl(&self) -> Result<crate::Context, ()> {
-        Ok(self.gl.clone())
+    fn initialize_lazy(&mut self) {
+        unsafe {
+            if self.gl.is_none() {
+                // inspired by https://github.com/rust-windowing/glutin/blob/bab33a84dfb094ff65c059400bed7993434638e2/glutin_examples/examples/headless.rs#L80-L87
+                let cb = ContextBuilder::new();
+                let (headless_context, _el) = build_context(cb).unwrap();
+                let current_context = headless_context.make_current().unwrap();
+                self.gl = Some(Context::load_with(|ptr| current_context.get_proc_address(ptr) as *const std::os::raw::c_void));
+                self.current_context = Some(current_context);
+            }
+        }
+    }
+
+    ///
+    /// Returns the graphics context for this "headless" window.
+    ///
+    pub fn gl(&mut self) -> Result<crate::Context, HeadlessError> {
+        self.initialize_lazy();
+
+        return match &self.gl {
+            Some(gl) => Ok(gl.clone()),
+            None => Err(HeadlessError::GlNotInitialized),
+        }
     }
 }
-
 
 #[cfg(target_os = "linux")]
 fn build_context_surfaceless<T1: ContextCurrentState>(
@@ -73,7 +95,7 @@ fn build_context<T1: ContextCurrentState>(
     // If willing, you could attempt to use hidden windows instead of os mesa,
     // but note that you must handle events for the window that come on the
     // events loop.
-    let el = EventLoop::new();
+    let el = EventLoopExtUnix::new_any_thread();
 
     println!("Trying surfaceless");
     let err1 = match build_context_surfaceless(cb.clone(), &el) {
@@ -96,11 +118,19 @@ fn build_context<T1: ContextCurrentState>(
     Err([err1, err2, err3])
 }
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(target_os = "windows")]
+fn build_context<T1: ContextCurrentState>(
+    cb: ContextBuilder<T1>,
+) -> Result<(glutin::Context<NotCurrent>, EventLoop<()>), CreationError> {
+    let el = EventLoopExtWindows::new_any_thread();
+    build_context_headless(cb.clone(), &el).map(|ctx| (ctx, el))
+}
+
+
+#[cfg(all(not(target_os = "windows"), not(target_os = "linux")))]
 fn build_context<T1: ContextCurrentState>(
     cb: ContextBuilder<T1>,
 ) -> Result<(glutin::Context<NotCurrent>, EventLoop<()>), CreationError> {
     let el = EventLoop::new();
     build_context_headless(cb.clone(), &el).map(|ctx| (ctx, el))
 }
-

@@ -570,7 +570,7 @@ impl Context {
             // to have a different code path.
             self.inner.GenRenderbuffers(1, &mut render_buf);
             self.inner.BindRenderbuffer(consts::RENDERBUFFER, render_buf);
-            self.inner.RenderbufferStorage(consts::RENDERBUFFER, consts::RGB8, width as _, height as _);
+            self.inner.RenderbufferStorage(consts::RENDERBUFFER, consts::RGBA8, width as _, height as _);
             self.inner.GenFramebuffers(1, &mut fb);
             self.inner.BindFramebuffer(consts::FRAMEBUFFER, fb);
             self.inner.FramebufferRenderbuffer(
