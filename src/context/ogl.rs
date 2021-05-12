@@ -569,8 +569,7 @@ impl Context {
             // Making an fb is not neccesary with osmesa, however, can't be bothered
             // to have a different code path.
             self.inner.GenRenderbuffers(1, &mut render_buf);
-            self.inner.BindRenderbuffer(consts::RENDERBUFFER, render_buf);
-            self.inner.RenderbufferStorage(consts::RENDERBUFFER, consts::RGBA8, width as _, height as _);
+            self.resize_renderbuffer_storage(render_buf, width, height).ok()?;
             self.inner.GenFramebuffers(1, &mut fb);
             self.inner.BindFramebuffer(consts::FRAMEBUFFER, fb);
             self.inner.FramebufferRenderbuffer(
@@ -583,6 +582,14 @@ impl Context {
             self.inner.Viewport(0, 0, width as _, height as _);
         }
         Some((fb, render_buf))
+    }
+
+    pub fn resize_renderbuffer_storage(&self, render_buf_id: u32, width: usize, height: usize) -> Result<(), ()> {
+        unsafe {
+            self.inner.BindRenderbuffer(consts::RENDERBUFFER, render_buf_id);
+            self.inner.RenderbufferStorage(consts::RENDERBUFFER, consts::RGBA8, width as _, height as _);
+        }
+        return Ok(());
     }
 
     pub fn delete_headless_target(&self, framebuffer_id: crate::context::Framebuffer, renderbuffer_id: crate::context::Renderbuffer) {

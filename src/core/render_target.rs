@@ -544,6 +544,11 @@ impl HeadlessTarget {
             renderbuffer_id: render_buf,
         })
     }
+
+    pub fn resize_buffer(&self, width: usize, height: usize) -> Result<(), ()> {
+        return self.context.resize_renderbuffer_storage(self.renderbuffer_id, width, height);
+    }
+
 }
 
 impl Drop for HeadlessTarget {
