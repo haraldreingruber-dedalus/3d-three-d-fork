@@ -2,6 +2,7 @@ pub mod consts {
     include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 }
 
+use crate::Error;
 use std::rc::Rc;
 
 use consts::Gl as InnerGl;
@@ -596,7 +597,7 @@ impl Context {
         pixel_format: u32,
         width: usize,
         height: usize,
-    ) -> Result<(), ()> {
+    ) -> Result<(), Error> {
         unsafe {
             self.inner
                 .BindRenderbuffer(consts::RENDERBUFFER, render_buf_id);

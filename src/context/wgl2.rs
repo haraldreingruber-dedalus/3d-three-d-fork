@@ -398,6 +398,19 @@ impl Context {
             .unwrap()
     }
 
+    pub fn read_pixels_with_u16_data(
+        &self,
+        x: u32,
+        y: u32,
+        width: u32,
+        height: u32,
+        format: u32,
+        data_type: u32,
+        dst_data: &mut [u16],
+    ) {
+        panic!("Method not implemented. We are looking for contributions :)");
+    }
+
     pub fn read_pixels_with_f32_data(
         &self,
         x: u32,

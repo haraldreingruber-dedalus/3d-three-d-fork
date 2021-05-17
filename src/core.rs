@@ -30,6 +30,13 @@ mod render_target;
 #[doc(inline)]
 pub use render_target::*;
 
+// headless rendering is currently not supported on web targets
+#[cfg(not(target_arch = "wasm32"))]
+mod headless_render_target;
+#[doc(inline)]
+#[cfg(not(target_arch = "wasm32"))]
+pub use headless_render_target::*;
+
 mod program;
 #[doc(inline)]
 pub use program::*;
