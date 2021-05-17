@@ -1,6 +1,6 @@
-use glutin::event_loop::EventLoop;
-use glutin::{ContextBuilder, ContextCurrentState, CreationError, PossiblyCurrent, NotCurrent};
 use glutin::dpi::PhysicalSize;
+use glutin::event_loop::EventLoop;
+use glutin::{ContextBuilder, ContextCurrentState, CreationError, NotCurrent, PossiblyCurrent};
 
 use crate::Context;
 use glutin::platform::windows::EventLoopExtWindows;
@@ -39,7 +39,9 @@ impl HeadlessContext {
                 let cb = ContextBuilder::new();
                 let (headless_context, _el) = build_context(cb).unwrap();
                 let current_context = headless_context.make_current().unwrap();
-                self.gl = Some(Context::load_with(|ptr| current_context.get_proc_address(ptr) as *const std::os::raw::c_void));
+                self.gl = Some(Context::load_with(|ptr| {
+                    current_context.get_proc_address(ptr) as *const std::os::raw::c_void
+                }));
                 self.current_context = Some(current_context);
             }
         }
@@ -54,7 +56,7 @@ impl HeadlessContext {
         return match &self.gl {
             Some(gl) => Ok(gl.clone()),
             None => Err(HeadlessError::GlNotInitialized),
-        }
+        };
     }
 }
 
@@ -125,7 +127,6 @@ fn build_context<T1: ContextCurrentState>(
     let el = EventLoopExtWindows::new_any_thread();
     build_context_headless(cb.clone(), &el).map(|ctx| (ctx, el))
 }
-
 
 #[cfg(all(not(target_os = "windows"), not(target_os = "linux")))]
 fn build_context<T1: ContextCurrentState>(

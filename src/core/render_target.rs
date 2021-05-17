@@ -129,7 +129,11 @@ impl Screen {
         Ok(pixels)
     }
 
-    pub fn read_color_with_framebuffer(context: &Context, fb: &crate::context::Framebuffer, viewport: Viewport) -> Result<Vec<u8>, Error> {
+    pub fn read_color_with_framebuffer(
+        context: &Context,
+        fb: &crate::context::Framebuffer,
+        viewport: Viewport,
+    ) -> Result<Vec<u8>, Error> {
         let mut pixels = vec![0u8; viewport.width * viewport.height * 4];
         context.bind_framebuffer(consts::READ_FRAMEBUFFER, Some(fb));
         context.read_pixels_with_u8_data(
@@ -139,6 +143,25 @@ impl Screen {
             viewport.height as u32,
             consts::RGBA,
             consts::UNSIGNED_BYTE,
+            &mut pixels,
+        );
+        Ok(pixels)
+    }
+
+    pub fn read_r16f_with_framebuffer(
+        context: &Context,
+        fb: &crate::context::Framebuffer,
+        viewport: Viewport,
+    ) -> Result<Vec<u16>, Error> {
+        let mut pixels = vec![0u16; viewport.width * viewport.height * 1];
+        context.bind_framebuffer(consts::READ_FRAMEBUFFER, Some(fb));
+        context.read_pixels_with_u16_data(
+            viewport.x as u32,
+            viewport.y as u32,
+            viewport.width as u32,
+            viewport.height as u32,
+            consts::R16F,
+            consts::HALF_FLOAT,
             &mut pixels,
         );
         Ok(pixels)
@@ -531,11 +554,13 @@ impl HeadlessTarget {
     ///
     pub fn new(
         context: &Context,
+        pixel_format: Format,
         width: usize,
         height: usize,
     ) -> Result<Self, Error> {
         let cloned_context = context.clone();
-        let (frame_buf, render_buf) = new_headless_target(&cloned_context, width, height)?;
+        let (frame_buf, render_buf) =
+            new_headless_target(&cloned_context, pixel_format, width, height)?;
         Ok(Self {
             context: cloned_context,
             width,
@@ -545,15 +570,25 @@ impl HeadlessTarget {
         })
     }
 
-    pub fn resize_buffer(&self, width: usize, height: usize) -> Result<(), ()> {
-        return self.context.resize_renderbuffer_storage(self.renderbuffer_id, width, height);
+    pub fn resize_buffer(
+        &self,
+        pixel_format: Format,
+        width: usize,
+        height: usize,
+    ) -> Result<(), ()> {
+        return self.context.resize_renderbuffer_storage(
+            self.renderbuffer_id,
+            internal_format_from(pixel_format),
+            width,
+            height,
+        );
     }
-
 }
 
 impl Drop for HeadlessTarget {
     fn drop(&mut self) {
-        self.context.delete_headless_target(self.framebuffer_id, self.renderbuffer_id);
+        self.context
+            .delete_headless_target(self.framebuffer_id, self.renderbuffer_id);
     }
 }
 
@@ -657,9 +692,14 @@ fn get_copy_array_effect(context: &Context) -> Result<&ImageEffect, Error> {
     }
 }
 
-fn new_headless_target(context: &Context, width: usize, height: usize) -> Result<(crate::context::Framebuffer, crate::context::Renderbuffer), Error> {
+fn new_headless_target(
+    context: &Context,
+    pixel_format: Format,
+    width: usize,
+    height: usize,
+) -> Result<(crate::context::Framebuffer, crate::context::Renderbuffer), Error> {
     Ok(context
-        .create_headless_buffers(width, height)
+        .create_headless_buffers(internal_format_from(pixel_format), width, height)
         .ok_or_else(|| Error::HeadlessTargetError {
             message: "Failed to create headless target".to_string(),
         })?)

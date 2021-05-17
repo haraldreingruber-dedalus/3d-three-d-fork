@@ -555,7 +555,12 @@ impl Context {
         }
     }
 
-    pub fn create_headless_buffers(&self, width: usize, height: usize) -> Option<(crate::context::Framebuffer, crate::context::Renderbuffer)> {
+    pub fn create_headless_buffers(
+        &self,
+        pixel_format: u32,
+        width: usize,
+        height: usize,
+    ) -> Option<(crate::context::Framebuffer, crate::context::Renderbuffer)> {
         // inspired by https://github.com/rust-windowing/glutin/blob/bab33a84dfb094ff65c059400bed7993434638e2/glutin_examples/examples/headless.rs#L89-L113
         let mut fb = 0;
         let mut render_buf = 0;
@@ -569,7 +574,8 @@ impl Context {
             // Making an fb is not neccesary with osmesa, however, can't be bothered
             // to have a different code path.
             self.inner.GenRenderbuffers(1, &mut render_buf);
-            self.resize_renderbuffer_storage(render_buf, width, height).ok()?;
+            self.resize_renderbuffer_storage(render_buf, pixel_format, width, height)
+                .ok()?;
             self.inner.GenFramebuffers(1, &mut fb);
             self.inner.BindFramebuffer(consts::FRAMEBUFFER, fb);
             self.inner.FramebufferRenderbuffer(
@@ -584,15 +590,31 @@ impl Context {
         Some((fb, render_buf))
     }
 
-    pub fn resize_renderbuffer_storage(&self, render_buf_id: u32, width: usize, height: usize) -> Result<(), ()> {
+    pub fn resize_renderbuffer_storage(
+        &self,
+        render_buf_id: u32,
+        pixel_format: u32,
+        width: usize,
+        height: usize,
+    ) -> Result<(), ()> {
         unsafe {
-            self.inner.BindRenderbuffer(consts::RENDERBUFFER, render_buf_id);
-            self.inner.RenderbufferStorage(consts::RENDERBUFFER, consts::RGBA8, width as _, height as _);
+            self.inner
+                .BindRenderbuffer(consts::RENDERBUFFER, render_buf_id);
+            self.inner.RenderbufferStorage(
+                consts::RENDERBUFFER,
+                pixel_format,
+                width as _,
+                height as _,
+            );
         }
         return Ok(());
     }
 
-    pub fn delete_headless_target(&self, framebuffer_id: crate::context::Framebuffer, renderbuffer_id: crate::context::Renderbuffer) {
+    pub fn delete_headless_target(
+        &self,
+        framebuffer_id: crate::context::Framebuffer,
+        renderbuffer_id: crate::context::Renderbuffer,
+    ) {
         unsafe {
             self.inner.DeleteFramebuffers(1, &framebuffer_id);
             self.inner.DeleteRenderbuffers(1, &renderbuffer_id);
@@ -1099,6 +1121,29 @@ impl Context {
         format: u32,
         data_type: u32,
         dst_data: &mut [f32],
+    ) {
+        unsafe {
+            self.inner.ReadPixels(
+                x as i32,
+                y as i32,
+                width as i32,
+                height as i32,
+                format,
+                data_type,
+                dst_data.as_ptr() as *mut consts::types::GLvoid,
+            )
+        }
+    }
+
+    pub fn read_pixels_with_u16_data(
+        &self,
+        x: u32,
+        y: u32,
+        width: u32,
+        height: u32,
+        format: u32,
+        data_type: u32,
+        dst_data: &mut [u16],
     ) {
         unsafe {
             self.inner.ReadPixels(

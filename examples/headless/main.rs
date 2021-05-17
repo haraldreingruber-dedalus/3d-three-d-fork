@@ -1,5 +1,5 @@
-use three_d::*;
 use three_d::Viewport;
+use three_d::*;
 
 fn main() {
     let viewport = Viewport::new_at_origo(1280, 720);
@@ -39,26 +39,33 @@ fn main() {
         ..Default::default()
     };
 
-    let headless_target = HeadlessTarget::new(&context, viewport.width, viewport.height).unwrap();
+    let headless_target =
+        HeadlessTarget::new(&context, Format::RGBA8, viewport.width, viewport.height).unwrap();
 
     // Construct a mesh, thereby transferring the mesh data to the GPU
     let mut mesh = Mesh::new(&context, &cpu_mesh).unwrap();
 
     // Start the main render loop
-    for frame_index in 0..3
-    {
+    for frame_index in 0..3 {
         // Ensure the aspect ratio of the camera matches the aspect ratio of the window viewport
         camera.set_aspect(viewport.aspect()).unwrap();
 
         // Start writing to the screen and clears the color and depth
-        Screen::write_with_framebuffer(&context, &headless_target.framebuffer_id, ClearState::color_and_depth(0.8, 0.8, 0.8, 1.0, 1.0), || {
-            // Set the current transformation of the triangle
-            mesh.transformation = Mat4::from_angle_y(radians((frame_index as f32 * 0.6) as f32));
+        Screen::write_with_framebuffer(
+            &context,
+            &headless_target.framebuffer_id,
+            ClearState::color_and_depth(0.8, 0.8, 0.8, 1.0, 1.0),
+            || {
+                // Set the current transformation of the triangle
+                mesh.transformation =
+                    Mat4::from_angle_y(radians((frame_index as f32 * 0.6) as f32));
 
-            // Render the triangle with the per vertex colors defined at construction
-            mesh.render_color(RenderStates::default(), viewport, &camera)?;
-            Ok(())
-        }).unwrap();
+                // Render the triangle with the per vertex colors defined at construction
+                mesh.render_color(RenderStates::default(), viewport, &camera)?;
+                Ok(())
+            },
+        )
+        .unwrap();
 
         let path = format!("headless-{}.png", frame_index);
 
@@ -66,13 +73,9 @@ fn main() {
             &context,
             &headless_target.framebuffer_id,
             viewport,
-        ).unwrap();
+        )
+        .unwrap();
 
-        Saver::save_pixels(
-            path,
-            &pixels,
-            viewport.width,
-            viewport.height,
-        ).unwrap();
+        Saver::save_pixels(path, &pixels, viewport.width, viewport.height).unwrap();
     }
 }
