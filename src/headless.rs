@@ -3,7 +3,6 @@ use glutin::event_loop::EventLoop;
 use glutin::{ContextBuilder, ContextCurrentState, CreationError, NotCurrent, PossiblyCurrent};
 
 use crate::Context;
-use glutin::platform::windows::EventLoopExtWindows;
 
 ///
 /// Error message from the [headless](crate::headless) module.
@@ -64,7 +63,7 @@ impl HeadlessContext {
 fn build_context_surfaceless<T1: ContextCurrentState>(
     cb: ContextBuilder<T1>,
     el: &EventLoop<()>,
-) -> Result<Context<NotCurrent>, CreationError> {
+) -> Result<glutin::Context<NotCurrent>, CreationError> {
     use glutin::platform::unix::HeadlessContextExt;
     cb.build_surfaceless(&el)
 }
@@ -80,7 +79,7 @@ fn build_context_headless<T1: ContextCurrentState>(
 #[cfg(target_os = "linux")]
 fn build_context_osmesa<T1: ContextCurrentState>(
     cb: ContextBuilder<T1>,
-) -> Result<Context<NotCurrent>, CreationError> {
+) -> Result<glutin::Context<NotCurrent>, CreationError> {
     use glutin::platform::unix::HeadlessContextExt;
     let size_one = PhysicalSize::new(1, 1);
     cb.build_osmesa(size_one)
@@ -89,7 +88,7 @@ fn build_context_osmesa<T1: ContextCurrentState>(
 #[cfg(target_os = "linux")]
 fn build_context<T1: ContextCurrentState>(
     cb: ContextBuilder<T1>,
-) -> Result<(Context<NotCurrent>, EventLoop<()>), [CreationError; 3]> {
+) -> Result<(glutin::Context<NotCurrent>, EventLoop<()>), [CreationError; 3]> {
     // On unix operating systems, you should always try for surfaceless first,
     // and if that does not work, headless (pbuffers), and if that too fails,
     // finally osmesa.
@@ -97,6 +96,7 @@ fn build_context<T1: ContextCurrentState>(
     // If willing, you could attempt to use hidden windows instead of os mesa,
     // but note that you must handle events for the window that come on the
     // events loop.
+    use glutin::platform::unix::EventLoopExtUnix;
     let el = EventLoopExtUnix::new_any_thread();
 
     println!("Trying surfaceless");
@@ -124,6 +124,7 @@ fn build_context<T1: ContextCurrentState>(
 fn build_context<T1: ContextCurrentState>(
     cb: ContextBuilder<T1>,
 ) -> Result<(glutin::Context<NotCurrent>, EventLoop<()>), CreationError> {
+    use glutin::platform::windows::EventLoopExtWindows;
     let el = EventLoopExtWindows::new_any_thread();
     build_context_headless(cb.clone(), &el).map(|ctx| (ctx, el))
 }
