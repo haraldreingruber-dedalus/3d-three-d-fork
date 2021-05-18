@@ -1,0 +1,6 @@
+{
+    // "name": "rust-nightly",
+    // "image": "rustlang/rust:nightly",  // if you want to use the nightly toolchain
+    "name": "rust-stable",
+	"image": "rust",
+}
