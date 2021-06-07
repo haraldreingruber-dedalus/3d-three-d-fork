@@ -148,23 +148,23 @@ impl Screen {
         Ok(pixels)
     }
 
-    pub fn read_r16f_with_framebuffer(
+    pub fn read_r16_with_framebuffer(
         context: &Context,
         fb: &crate::context::Framebuffer,
         viewport: Viewport,
-    ) -> Result<Vec<u16>, Error> {
-        let mut pixels = vec![0u16; viewport.width * viewport.height * 1];
+        dst_data: &mut [u16],
+    ) -> Result<(), Error> {
         context.bind_framebuffer(consts::READ_FRAMEBUFFER, Some(fb));
         context.read_pixels_with_u16_data(
             viewport.x as u32,
             viewport.y as u32,
             viewport.width as u32,
             viewport.height as u32,
-            consts::R16F,
-            consts::HALF_FLOAT,
-            &mut pixels,
+            consts::RED,
+            consts::UNSIGNED_SHORT,
+            dst_data,
         );
-        Ok(pixels)
+        Ok(())
     }
 
     ///

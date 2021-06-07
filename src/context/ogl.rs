@@ -1154,7 +1154,7 @@ impl Context {
                 height as i32,
                 format,
                 data_type,
-                dst_data.as_ptr() as *mut consts::types::GLvoid,
+                dst_data.as_mut_ptr() as *mut consts::types::GLvoid,
             )
         }
     }

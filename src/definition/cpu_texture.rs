@@ -25,7 +25,7 @@ pub enum Wrapping {
 pub enum Format {
     R8,
     R32F,
-    R16F,
+    R16,
     RGB8,
     RGB32F,
     SRGB8,
