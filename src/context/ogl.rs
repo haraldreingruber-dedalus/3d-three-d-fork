@@ -1147,6 +1147,7 @@ impl Context {
         dst_data: &mut [u16],
     ) {
         unsafe {
+            self.inner.PixelStorei(consts::PACK_ALIGNMENT, 1);
             self.inner.ReadPixels(
                 x as i32,
                 y as i32,
