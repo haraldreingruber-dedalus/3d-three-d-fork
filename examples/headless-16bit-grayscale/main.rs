@@ -39,7 +39,8 @@ fn main() {
         ..Default::default()
     };
 
-    let headless_target = HeadlessTarget::new(&context, Format::R16, viewport.width, viewport.height).unwrap();
+    let headless_target =
+        HeadlessTarget::new(&context, Format::R16, viewport.width, viewport.height).unwrap();
 
     // Construct a mesh, thereby transferring the mesh data to the GPU
     let mut mesh = Mesh::new(&context, &cpu_mesh).unwrap();
@@ -56,7 +57,8 @@ fn main() {
             ClearState::color_and_depth(0.0, 0.0, 0.0, 1.0, 1.0),
             || {
                 // Set the current transformation of the triangle
-                mesh.transformation = Mat4::from_angle_y(radians((frame_index as f32 * 0.6) as f32));
+                mesh.transformation =
+                    Mat4::from_angle_y(radians((frame_index as f32 * 0.6) as f32));
 
                 // Render the triangle with the per vertex colors defined at construction
                 mesh.render_color(RenderStates::default(), viewport, &camera)?;
@@ -71,9 +73,20 @@ fn main() {
         let mut pixels_r16: Vec<u16> = Vec::with_capacity(buffer_size);
         pixels_r16.resize(buffer_size, 0);
 
-        Screen::read_r16_with_framebuffer(&context, &headless_target.framebuffer_id, viewport, &mut pixels_r16)
-            .unwrap();
+        Screen::read_r16_with_framebuffer(
+            &context,
+            &headless_target.framebuffer_id,
+            viewport,
+            &mut pixels_r16,
+        )
+        .unwrap();
 
-        Saver::save_pixels_16bit_grayscale(path, pixels_r16.as_slice(), viewport.width, viewport.height).unwrap();
+        Saver::save_pixels_16bit_grayscale(
+            path,
+            pixels_r16.as_slice(),
+            viewport.width,
+            viewport.height,
+        )
+        .unwrap();
     }
 }

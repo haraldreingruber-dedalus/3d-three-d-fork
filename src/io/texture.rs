@@ -101,12 +101,22 @@ impl Saver {
     ) -> Result<(), IOError> {
         let pixels_out = Saver::convert_from_opengl_coordinates::<u16>(pixels, width, height, 1);
 
-        let img = image::ImageBuffer::<image::Luma<u16> ,&[u16]>::from_raw(width as u32, height as u32, pixels_out.as_slice()).unwrap();
+        let img = image::ImageBuffer::<image::Luma<u16>, &[u16]>::from_raw(
+            width as u32,
+            height as u32,
+            pixels_out.as_slice(),
+        )
+        .unwrap();
         img.save(path)?;
         Ok(())
     }
 
-    fn convert_from_opengl_coordinates<T: Default + Copy + Clone>(pixels: &[T], width: usize, height: usize, channels: usize) -> Vec<T> {
+    fn convert_from_opengl_coordinates<T: Default + Copy + Clone>(
+        pixels: &[T],
+        width: usize,
+        height: usize,
+        channels: usize,
+    ) -> Vec<T> {
         let mut pixels_out = vec![T::default(); width * height * channels];
         for row in 0..height {
             for col in 0..width {
