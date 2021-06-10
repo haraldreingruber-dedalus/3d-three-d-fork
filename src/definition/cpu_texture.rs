@@ -25,6 +25,7 @@ pub enum Wrapping {
 pub enum Format {
     R8,
     R32F,
+    #[cfg(not(target_arch = "wasm32"))]
     R16,
     RGB8,
     RGB32F,

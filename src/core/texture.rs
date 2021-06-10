@@ -1013,6 +1013,7 @@ pub fn internal_format_from(format: Format) -> u32 {
         Format::RGBA8 => consts::RGBA8,
         Format::SRGB8 => consts::SRGB8,
         Format::SRGBA8 => consts::SRGB8_ALPHA8,
+        #[cfg(not(target_arch = "wasm32"))]
         Format::R16 => consts::R16,
         Format::R32F => consts::R32F,
         Format::RGB32F => consts::RGB32F,
@@ -1031,6 +1032,7 @@ fn internal_format_from_depth(format: DepthFormat) -> u32 {
 fn channel_count_from_format(format: Format) -> usize {
     match format {
         Format::R8 => 1,
+        #[cfg(not(target_arch = "wasm32"))]
         Format::R16 => 1,
         Format::R32F => 1,
         Format::RGB8 => 3,
@@ -1045,6 +1047,7 @@ fn channel_count_from_format(format: Format) -> usize {
 fn format_from(format: Format) -> u32 {
     match format {
         Format::R8 => consts::RED,
+        #[cfg(not(target_arch = "wasm32"))]
         Format::R16 => consts::RED,
         Format::R32F => consts::RED,
         Format::RGB8 => consts::RGB,
