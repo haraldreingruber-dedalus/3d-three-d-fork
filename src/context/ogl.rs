@@ -2,6 +2,7 @@ pub mod consts {
     include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 }
 
+use crate::Error;
 use std::rc::Rc;
 
 use consts::Gl as InnerGl;
@@ -12,6 +13,7 @@ pub type Shader = u32;
 pub type Program = u32;
 pub type Buffer = u32;
 pub type Framebuffer = u32;
+pub type Renderbuffer = u32;
 pub type Texture = u32;
 pub type VertexArrayObject = u32;
 pub type Sync = consts::types::GLsync;
@@ -554,6 +556,72 @@ impl Context {
         }
     }
 
+    pub fn create_headless_buffers(
+        &self,
+        pixel_format: u32,
+        width: usize,
+        height: usize,
+    ) -> Option<(crate::context::Framebuffer, crate::context::Renderbuffer)> {
+        // inspired by https://github.com/rust-windowing/glutin/blob/bab33a84dfb094ff65c059400bed7993434638e2/glutin_examples/examples/headless.rs#L89-L113
+        let mut fb = 0;
+        let mut render_buf = 0;
+        unsafe {
+            // Using the fb backing a pbuffer is very much a bad idea. Fails on
+            // many platforms, and is deprecated. Better just make your own fb.
+            //
+            // Surfaceless doesn't come with a surface, as the name implies, so
+            // you must make your own fb.
+            //
+            // Making an fb is not neccesary with osmesa, however, can't be bothered
+            // to have a different code path.
+            self.inner.GenRenderbuffers(1, &mut render_buf);
+            self.resize_renderbuffer_storage(render_buf, pixel_format, width, height)
+                .ok()?;
+            self.inner.GenFramebuffers(1, &mut fb);
+            self.inner.BindFramebuffer(consts::FRAMEBUFFER, fb);
+            self.inner.FramebufferRenderbuffer(
+                consts::FRAMEBUFFER,
+                consts::COLOR_ATTACHMENT0,
+                consts::RENDERBUFFER,
+                render_buf,
+            );
+
+            self.inner.Viewport(0, 0, width as _, height as _);
+        }
+        Some((fb, render_buf))
+    }
+
+    pub fn resize_renderbuffer_storage(
+        &self,
+        render_buf_id: u32,
+        pixel_format: u32,
+        width: usize,
+        height: usize,
+    ) -> Result<(), Error> {
+        unsafe {
+            self.inner
+                .BindRenderbuffer(consts::RENDERBUFFER, render_buf_id);
+            self.inner.RenderbufferStorage(
+                consts::RENDERBUFFER,
+                pixel_format,
+                width as _,
+                height as _,
+            );
+        }
+        return Ok(());
+    }
+
+    pub fn delete_headless_target(
+        &self,
+        framebuffer_id: crate::context::Framebuffer,
+        renderbuffer_id: crate::context::Renderbuffer,
+    ) {
+        unsafe {
+            self.inner.DeleteFramebuffers(1, &framebuffer_id);
+            self.inner.DeleteRenderbuffers(1, &renderbuffer_id);
+        }
+    }
+
     pub fn viewport(&self, x: i32, y: i32, width: usize, height: usize) {
         unsafe {
             self.inner.Viewport(x, y, width as i32, height as i32);
@@ -1064,6 +1132,30 @@ impl Context {
                 format,
                 data_type,
                 dst_data.as_ptr() as *mut consts::types::GLvoid,
+            )
+        }
+    }
+
+    pub fn read_pixels_with_u16_data(
+        &self,
+        x: u32,
+        y: u32,
+        width: u32,
+        height: u32,
+        format: u32,
+        data_type: u32,
+        dst_data: &mut [u16],
+    ) {
+        unsafe {
+            self.inner.PixelStorei(consts::PACK_ALIGNMENT, 1);
+            self.inner.ReadPixels(
+                x as i32,
+                y as i32,
+                width as i32,
+                height as i32,
+                format,
+                data_type,
+                dst_data.as_mut_ptr() as *mut consts::types::GLvoid,
             )
         }
     }

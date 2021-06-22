@@ -30,6 +30,13 @@ mod render_target;
 #[doc(inline)]
 pub use render_target::*;
 
+// headless rendering is currently not supported on web targets
+#[cfg(not(target_arch = "wasm32"))]
+mod headless_render_target;
+#[doc(inline)]
+#[cfg(not(target_arch = "wasm32"))]
+pub use headless_render_target::*;
+
 mod program;
 #[doc(inline)]
 pub use program::*;
@@ -46,6 +53,11 @@ pub enum Error {
     },
     /// An error when using a render target.
     RenderTargetError {
+        /// Error message
+        message: String,
+    },
+    /// An error when using a headless render target.
+    HeadlessTargetError {
         /// Error message
         message: String,
     },
@@ -69,4 +81,18 @@ pub enum Error {
         /// Error message
         message: String,
     },
+}
+
+impl Error {
+    pub fn message(&self) -> &String {
+        return match self {
+            Error::ProgramError { message } => message,
+            Error::RenderTargetError { message } => message,
+            Error::HeadlessTargetError { message } => message,
+            Error::TextureError { message } => message,
+            Error::BufferError { message } => message,
+            Error::MeshError { message } => message,
+            Error::CameraError { message } => message,
+        };
+    }
 }

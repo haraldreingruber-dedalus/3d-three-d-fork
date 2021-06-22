@@ -99,6 +99,18 @@ impl Screen {
         Ok(())
     }
 
+    pub fn write_with_framebuffer<F: FnOnce() -> Result<(), Error>>(
+        context: &Context,
+        fb: &crate::context::Framebuffer,
+        clear_state: ClearState,
+        render: F,
+    ) -> Result<(), Error> {
+        context.bind_framebuffer(consts::DRAW_FRAMEBUFFER, Some(fb));
+        clear(context, &clear_state);
+        render()?;
+        Ok(())
+    }
+
     ///
     /// Returns the RGBA color values from the screen as a list of bytes (one byte for each color channel).
     ///
@@ -115,6 +127,44 @@ impl Screen {
             &mut pixels,
         );
         Ok(pixels)
+    }
+
+    pub fn read_color_with_framebuffer(
+        context: &Context,
+        fb: &crate::context::Framebuffer,
+        viewport: Viewport,
+    ) -> Result<Vec<u8>, Error> {
+        let mut pixels = vec![0u8; viewport.width * viewport.height * 4];
+        context.bind_framebuffer(consts::READ_FRAMEBUFFER, Some(fb));
+        context.read_pixels_with_u8_data(
+            viewport.x as u32,
+            viewport.y as u32,
+            viewport.width as u32,
+            viewport.height as u32,
+            consts::RGBA,
+            consts::UNSIGNED_BYTE,
+            &mut pixels,
+        );
+        Ok(pixels)
+    }
+
+    pub fn read_r16_with_framebuffer(
+        context: &Context,
+        fb: &crate::context::Framebuffer,
+        viewport: Viewport,
+        dst_data: &mut [u16],
+    ) -> Result<(), Error> {
+        context.bind_framebuffer(consts::READ_FRAMEBUFFER, Some(fb));
+        context.read_pixels_with_u16_data(
+            viewport.x as u32,
+            viewport.y as u32,
+            viewport.width as u32,
+            viewport.height as u32,
+            consts::RED,
+            consts::UNSIGNED_SHORT,
+            dst_data,
+        );
+        Ok(())
     }
 
     ///

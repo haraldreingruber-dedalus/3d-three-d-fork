@@ -57,3 +57,10 @@ pub use window::*;
 pub mod gui;
 #[doc(inline)]
 pub use gui::*;
+
+// headless rendering is currently not supported on web targets
+#[cfg(not(target_arch = "wasm32"))]
+pub mod headless;
+#[doc(inline)]
+#[cfg(not(target_arch = "wasm32"))]
+pub use headless::*;

@@ -81,23 +81,51 @@ impl Saver {
         width: usize,
         height: usize,
     ) -> Result<(), IOError> {
-        let mut pixels_out = vec![0u8; width * height * 4];
-        for row in 0..height {
-            for col in 0..width {
-                for i in 0..4 {
-                    pixels_out[4 * width * (height - row - 1) + 4 * col + i] =
-                        pixels[4 * width * row + 4 * col + i];
-                }
-            }
-        }
+        let pixels_out = Saver::convert_from_opengl_coordinates::<u8>(pixels, width, height, 4);
 
         image::save_buffer(
             path,
-            &pixels_out,
+            pixels_out.as_slice(),
             width as u32,
             height as u32,
             image::ColorType::Rgba8,
         )?;
         Ok(())
+    }
+
+    pub fn save_pixels_16bit_grayscale<P: AsRef<Path>>(
+        path: P,
+        pixels: &[u16],
+        width: usize,
+        height: usize,
+    ) -> Result<(), IOError> {
+        let pixels_out = Saver::convert_from_opengl_coordinates::<u16>(pixels, width, height, 1);
+
+        let img = image::ImageBuffer::<image::Luma<u16>, &[u16]>::from_raw(
+            width as u32,
+            height as u32,
+            pixels_out.as_slice(),
+        )
+        .unwrap();
+        img.save(path)?;
+        Ok(())
+    }
+
+    fn convert_from_opengl_coordinates<T: Default + Copy + Clone>(
+        pixels: &[T],
+        width: usize,
+        height: usize,
+        channels: usize,
+    ) -> Vec<T> {
+        let mut pixels_out = vec![T::default(); width * height * channels];
+        for row in 0..height {
+            for col in 0..width {
+                for i in 0..channels {
+                    pixels_out[channels * width * (height - row - 1) + channels * col + i] =
+                        pixels[channels * width * row + channels * col + i];
+                }
+            }
+        }
+        pixels_out
     }
 }
