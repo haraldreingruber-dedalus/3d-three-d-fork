@@ -17,6 +17,18 @@ pub enum WindowError {
     CanvasError { message: String },
 }
 
+impl WindowError {
+    pub fn message(&self) -> &String {
+        return match self {
+            WindowError::WindowCreationError { message } => message,
+            WindowError::ContextError { message } => message,
+            WindowError::PerformanceError { message } => message,
+            WindowError::EventListenerError { message } => message,
+            WindowError::CanvasError { message } => message,
+        };
+    }
+}
+
 pub struct Window {
     canvas: Option<web_sys::HtmlCanvasElement>,
     window: Rc<web_sys::Window>,

@@ -19,6 +19,18 @@ pub enum WindowError {
     InvalidNumberOfSamples,
 }
 
+impl WindowError {
+    pub fn message(&self) -> String {
+        return match self {
+            WindowError::WindowCreationError(e) => e.to_string(),
+            WindowError::ContextError(e) => e.to_string(),
+            WindowError::InvalidNumberOfSamples => {
+                "InvalidNumberOfSamples: The number of samples must be a power of two.".to_string()
+            }
+        };
+    }
+}
+
 impl From<glutin::CreationError> for WindowError {
     fn from(other: glutin::CreationError) -> Self {
         WindowError::WindowCreationError(other)
