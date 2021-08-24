@@ -2,7 +2,9 @@ pub(crate) use cgmath::ortho;
 pub(crate) use cgmath::perspective;
 #[doc(hidden)]
 pub use cgmath::prelude::*;
-use cgmath::{Deg, Matrix2, Matrix3, Matrix4, Point3, Rad, Vector2, Vector3, Vector4};
+use cgmath::{
+    Deg, Euler, Matrix2, Matrix3, Matrix4, Point3, Quaternion, Rad, Vector2, Vector3, Vector4,
+};
 
 pub type Vec2 = Vector2<f32>;
 pub type Vec3 = Vector3<f32>;
@@ -10,6 +12,8 @@ pub type Vec4 = Vector4<f32>;
 pub type Mat2 = Matrix2<f32>;
 pub type Mat3 = Matrix3<f32>;
 pub type Mat4 = Matrix4<f32>;
+pub type Quat = Quaternion<f32>;
+pub type EulerAngle<A> = Euler<A>;
 pub type Point = Point3<f32>;
 pub type Degrees = Deg<f32>;
 pub type Radians = Rad<f32>;
