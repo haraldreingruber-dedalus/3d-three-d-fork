@@ -37,12 +37,14 @@ impl HeadlessTarget {
         width: usize,
         height: usize,
     ) -> Result<(), Error> {
-        return self.context.resize_renderbuffer_storage(
+        let result = self.context.resize_renderbuffer_storage(
             self.renderbuffer_id,
             internal_format_from(pixel_format),
             width,
             height,
         );
+        self.context.viewport(0, 0, width as _, height as _);
+        return result;
     }
 }
 
@@ -59,9 +61,11 @@ fn new_headless_target(
     width: usize,
     height: usize,
 ) -> Result<(Framebuffer, Renderbuffer), Error> {
-    Ok(context
+    let buffers = context
         .create_headless_buffers(internal_format_from(pixel_format), width, height)
         .ok_or_else(|| Error::HeadlessTargetError {
             message: "Failed to create headless target".to_string(),
-        })?)
+        })?;
+    context.viewport(0, 0, width as _, height as _);
+    return Ok(buffers);
 }

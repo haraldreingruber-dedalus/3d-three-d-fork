@@ -586,7 +586,6 @@ impl Context {
                 render_buf,
             );
 
-            self.inner.Viewport(0, 0, width as _, height as _);
         }
         Some((fb, render_buf))
     }
