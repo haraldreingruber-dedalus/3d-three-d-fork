@@ -2,7 +2,8 @@ use crate::core::*;
 use crate::definition::*;
 use crate::math::*;
 
-pub(super) enum ProjectionType {
+#[derive(PartialEq, Debug)]
+pub enum ProjectionType {
     Orthographic {
         width: f32,
         height: f32,
@@ -341,7 +342,7 @@ impl Camera {
         (self.screen2ray * screen_pos).truncate().normalize()
     }
 
-    pub(super) fn projection_type(&self) -> &ProjectionType {
+    pub fn projection_type(&self) -> &ProjectionType {
         &self.projection_type
     }
 
