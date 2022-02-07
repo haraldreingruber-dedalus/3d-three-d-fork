@@ -45,16 +45,20 @@ impl ActiveInfo {
 ///
 #[derive(Clone)]
 pub struct Context {
-    inner: Rc<InnerGl>,
+    // not used in stub: // inner: Rc<InnerGl>,
 }
 
 impl Context {
+    pub fn new_stub() -> Context {
+        Self {}
+    }
+
     pub fn load_with<F>(loadfn: F) -> Context
     where
         for<'r> F: FnMut(&'r str) -> *const consts::types::GLvoid,
     {
         let gl = Context {
-            inner: Rc::new(InnerGl::load_with(loadfn)),
+            // not used in stub: // inner: Rc::new(InnerGl::load_with(loadfn)),
         };
         gl.bind_vertex_array(&gl.create_vertex_array().unwrap());
         gl
@@ -62,12 +66,19 @@ impl Context {
 
     pub fn finish(&self) {
         unsafe {
-            self.inner.Finish();
+            /* not used in stub
+;
+
+             */
         }
     }
 
     pub fn create_shader(&self, type_: u32) -> Option<Shader> {
-        let id = unsafe { self.inner.CreateShader(type_) };
+        let id = unsafe { /* not used in stub
+self.inner.CreateShader(type_)
+*/
+            0
+        };
         Some(id)
     }
 
@@ -79,17 +90,22 @@ impl Context {
         let c_str: &CStr = &CString::new(s).unwrap();
 
         unsafe {
-            self.inner
-                .ShaderSource(*shader, 1, &c_str.as_ptr(), std::ptr::null());
+            /* not used in stub
+;
             self.inner.CompileShader(*shader);
+
+             */
         }
     }
 
     pub fn get_shader_info_log(&self, shader: &Shader) -> Option<String> {
         let mut len: consts::types::GLint = 0;
         unsafe {
-            self.inner
+            /* not used in stub
+self.inner
                 .GetShaderiv(*shader, consts::INFO_LOG_LENGTH, &mut len);
+
+             */
         }
 
         if len == 0 {
@@ -97,12 +113,15 @@ impl Context {
         } else {
             let error = create_whitespace_cstring_with_len(len as usize);
             unsafe {
-                self.inner.GetShaderInfoLog(
+                /* not used in stub
+self.inner.GetShaderInfoLog(
                     *shader,
                     len,
                     std::ptr::null_mut(),
                     error.as_ptr() as *mut consts::types::GLchar,
                 );
+
+                 */
             }
             Some(error.to_string_lossy().into_owned())
         }
@@ -110,26 +129,34 @@ impl Context {
 
     pub fn delete_shader(&self, shader: Option<&Shader>) {
         unsafe {
-            self.inner.DeleteShader(*shader.unwrap());
+            /* not used in stub
+self.inner.DeleteShader(*shader.unwrap());
+
+             */
         }
     }
 
     pub fn attach_shader(&self, program: &Program, shader: &Shader) {
         unsafe {
-            self.inner.AttachShader(*program, *shader);
+            /* not used in stub
+self.inner.AttachShader(*program, *shader);
+
+             */
         }
     }
 
     pub fn detach_shader(&self, program: &Program, shader: &Shader) {
         unsafe {
-            self.inner.DetachShader(*program, *shader);
+            /* not used in stub
+self.inner.DetachShader(*program, *shader);
+
+             */
         }
     }
 
     pub fn get_program_parameter(&self, program: &Program, pname: u32) -> u32 {
         let mut out = 0;
         unsafe {
-            self.inner.GetProgramiv(*program, pname, &mut out);
         }
         out as u32
     }
@@ -140,15 +167,7 @@ impl Context {
         let mut _type = 0;
         let name = create_whitespace_cstring_with_len(length as usize);
         unsafe {
-            self.inner.GetActiveAttrib(
-                *program,
-                index,
-                length,
-                &mut length,
-                &mut size,
-                &mut _type,
-                name.as_ptr() as *mut consts::types::GLchar,
-            );
+            ;
         }
 
         let mut s = name.to_string_lossy().into_owned();
@@ -162,15 +181,7 @@ impl Context {
         let mut _type = 0;
         let name = create_whitespace_cstring_with_len(length as usize);
         unsafe {
-            self.inner.GetActiveUniform(
-                *program,
-                index,
-                length,
-                &mut length,
-                &mut size,
-                &mut _type,
-                name.as_ptr() as *mut consts::types::GLchar,
-            );
+            ;
         }
 
         let mut s = name.to_string_lossy().into_owned();
@@ -181,14 +192,14 @@ impl Context {
     pub fn create_buffer(&self) -> Option<Buffer> {
         let mut id: u32 = 0;
         unsafe {
-            self.inner.GenBuffers(1, &mut id);
+            ;
         }
         Some(id)
     }
 
     pub fn delete_buffer(&self, buffer: &Buffer) {
         unsafe {
-            self.inner.DeleteBuffers(1, [*buffer].as_ptr());
+            ;
         }
     }
 
@@ -202,118 +213,98 @@ impl Context {
 
         unsafe {
             let mut current = -1;
-            self.inner.GetIntegerv(pname, &mut current);
+            ;
             if current != 0 {
                 println!("{}", current);
                 panic!();
             }
-            self.inner.BindBufferBase(target, index, *buffer);
+            ;
         }
     }
 
     pub fn bind_buffer(&self, target: u32, buffer: &Buffer) {
         unsafe {
-            self.inner.BindBuffer(target, *buffer);
+            ;
         }
     }
 
     pub fn unbind_buffer(&self, target: u32) {
         unsafe {
-            self.inner.BindBuffer(target, 0);
+            ;
         }
     }
 
     pub fn get_uniform_block_index(&self, program: &Program, name: &str) -> u32 {
         let c_str = std::ffi::CString::new(name).unwrap();
-        unsafe { self.inner.GetUniformBlockIndex(*program, c_str.as_ptr()) }
+        unsafe {
+            0
+        }
     }
 
     pub fn uniform_block_binding(&self, program: &Program, location: u32, index: u32) {
         unsafe {
-            self.inner.UniformBlockBinding(*program, location, index);
         }
     }
 
     pub fn buffer_data(&self, target: u32, size_in_bytes: u32, usage: u32) {
         unsafe {
-            self.inner.BufferData(
-                target,
-                size_in_bytes as consts::types::GLsizeiptr, // size of data in bytes
-                std::ptr::null() as *const consts::types::GLvoid, // pointer to data
-                usage,
-            );
+            ;
         }
     }
 
     pub fn buffer_data_u8(&self, target: u32, data: &[u8], usage: u32) {
         unsafe {
-            self.inner.BufferData(
-                target,
-                (data.len() * std::mem::size_of::<u8>()) as consts::types::GLsizeiptr, // size of data in bytes
-                data.as_ptr() as *const consts::types::GLvoid, // pointer to data
-                usage,
-            );
+            ;
         }
     }
 
     pub fn buffer_data_u32(&self, target: u32, data: &[u32], usage: u32) {
         unsafe {
-            self.inner.BufferData(
-                target,
-                (data.len() * std::mem::size_of::<u32>()) as consts::types::GLsizeiptr, // size of data in bytes
-                data.as_ptr() as *const consts::types::GLvoid, // pointer to data
-                usage,
-            );
+            ;
         }
     }
 
     pub fn buffer_data_f32(&self, target: u32, data: &[f32], usage: u32) {
         unsafe {
-            self.inner.BufferData(
-                target,
-                (data.len() * std::mem::size_of::<f32>()) as consts::types::GLsizeiptr, // size of data in bytes
-                data.as_ptr() as *const consts::types::GLvoid, // pointer to data
-                usage,
-            );
+            ;
         }
     }
 
     pub fn create_vertex_array(&self) -> Option<VertexArrayObject> {
         let mut id: u32 = 0;
         unsafe {
-            self.inner.GenVertexArrays(1, &mut id);
+            ;
         }
         Some(id)
     }
 
     pub fn bind_vertex_array(&self, array: &VertexArrayObject) {
         unsafe {
-            self.inner.BindVertexArray(*array);
+            ;
         }
     }
 
     pub fn create_program(&self) -> Program {
-        unsafe { self.inner.CreateProgram() }
+        unsafe {
+            0
+        }
     }
 
     pub fn link_program(&self, program: &Program) -> bool {
         unsafe {
-            self.inner.LinkProgram(*program);
         }
 
         let mut success: consts::types::GLint = 1;
         unsafe {
-            self.inner
-                .GetProgramiv(*program, consts::LINK_STATUS, &mut success);
+            ;
         }
-        success == 1
+        return true;
     }
 
     pub fn get_program_info_log(&self, program: &Program) -> Option<String> {
         let mut len: consts::types::GLint = 0;
         unsafe {
-            self.inner
-                .GetProgramiv(*program, consts::INFO_LOG_LENGTH, &mut len);
+            ;
         }
 
         if len == 0 {
@@ -321,12 +312,7 @@ impl Context {
         } else {
             let error = create_whitespace_cstring_with_len(len as usize);
             unsafe {
-                self.inner.GetProgramInfoLog(
-                    *program,
-                    len,
-                    std::ptr::null_mut(),
-                    error.as_ptr() as *mut consts::types::GLchar,
-                );
+                ;
             }
             Some(error.to_string_lossy().into_owned())
         }
@@ -334,25 +320,25 @@ impl Context {
 
     pub fn use_program(&self, program: &Program) {
         unsafe {
-            self.inner.UseProgram(*program);
+            ;
         }
     }
 
     pub fn unuse_program(&self) {
         unsafe {
-            self.inner.UseProgram(0);
+            ;
         }
     }
 
     pub fn delete_program(&self, program: &Program) {
         unsafe {
-            self.inner.DeleteProgram(*program);
+            ;
         }
     }
 
     pub fn get_attrib_location(&self, program: &Program, name: &str) -> Option<AttributeLocation> {
         let c_str = std::ffi::CString::new(name).unwrap();
-        let location = unsafe { self.inner.GetAttribLocation(*program, c_str.as_ptr()) };
+        let location = unsafe { 0 };
         if location == -1 {
             None
         } else {
@@ -362,13 +348,13 @@ impl Context {
 
     pub fn enable_vertex_attrib_array(&self, location: AttributeLocation) {
         unsafe {
-            self.inner.EnableVertexAttribArray(location);
+            ;
         }
     }
 
     pub fn disable_vertex_attrib_array(&self, location: AttributeLocation) {
         unsafe {
-            self.inner.DisableVertexAttribArray(location);
+            ;
         }
     }
 
@@ -382,29 +368,19 @@ impl Context {
         offset: u32,
     ) {
         unsafe {
-            self.inner.VertexAttribPointer(
-                location as consts::types::GLuint, // index of the generic vertex attribute
-                size as consts::types::GLint, // the number of components per generic vertex attribute
-                data_type as consts::types::GLenum, // data type
-                normalized as consts::types::GLboolean, // normalized (int-to-float conversion)
-                byte_size_for_type(data_type, stride) as consts::types::GLint, // stride (byte offset between consecutive attributes)
-                byte_size_for_type(data_type, offset) as *const consts::types::GLvoid, // offset of the first component
-            );
+            ;
         }
     }
 
     pub fn vertex_attrib_divisor(&self, location: AttributeLocation, divisor: u32) {
         unsafe {
-            self.inner.VertexAttribDivisor(
-                location as consts::types::GLuint,
-                divisor as consts::types::GLuint,
-            );
+            ;
         }
     }
 
     pub fn get_uniform_location(&self, program: &Program, name: &str) -> Option<UniformLocation> {
         let c_str = std::ffi::CString::new(name).unwrap();
-        let location = unsafe { self.inner.GetUniformLocation(*program, c_str.as_ptr()) };
+        let location = unsafe { 0 };
         if location == -1 {
             None
         } else {
@@ -414,66 +390,62 @@ impl Context {
 
     pub fn uniform1i(&self, location: &UniformLocation, data: i32) {
         unsafe {
-            self.inner.Uniform1i(*location as i32, data);
+            ;
         }
     }
 
     pub fn uniform1f(&self, location: &UniformLocation, data: f32) {
         unsafe {
-            self.inner.Uniform1f(*location as i32, data);
+            ;
         }
     }
 
     pub fn uniform2fv(&self, location: &UniformLocation, data: &[f32]) {
         unsafe {
-            self.inner.Uniform2fv(*location as i32, 1, data.as_ptr());
+            ;
         }
     }
 
     pub fn uniform3fv(&self, location: &UniformLocation, data: &[f32]) {
         unsafe {
-            self.inner.Uniform3fv(*location as i32, 1, data.as_ptr());
+            ;
         }
     }
 
     pub fn uniform4fv(&self, location: &UniformLocation, data: &[f32]) {
         unsafe {
-            self.inner.Uniform4fv(*location as i32, 1, data.as_ptr());
+            ;
         }
     }
 
     pub fn uniform_matrix2fv(&self, location: &UniformLocation, data: &[f32]) {
         unsafe {
-            self.inner
-                .UniformMatrix2fv(*location as i32, 1, consts::FALSE, data.as_ptr());
+            ;
         }
     }
 
     pub fn uniform_matrix3fv(&self, location: &UniformLocation, data: &[f32]) {
         unsafe {
-            self.inner
-                .UniformMatrix3fv(*location as i32, 1, consts::FALSE, data.as_ptr());
+            ;
         }
     }
 
     pub fn uniform_matrix4fv(&self, location: &UniformLocation, data: &[f32]) {
         unsafe {
-            self.inner
-                .UniformMatrix4fv(*location as i32, 1, consts::FALSE, data.as_ptr());
+            ;
         }
     }
 
     pub fn draw_buffers(&self, draw_buffers: &[u32]) {
         unsafe {
-            self.inner
-                .DrawBuffers(draw_buffers.len() as i32, draw_buffers.as_ptr());
+            ;
         }
     }
 
     pub fn create_framebuffer(&self) -> Option<Framebuffer> {
         let mut id: u32 = 0;
         unsafe {
-            self.inner.GenFramebuffers(1, &mut id);
+            ;
         }
         Some(id)
     }
@@ -484,7 +456,7 @@ impl Context {
             None => 0,
         };
         unsafe {
-            self.inner.BindFramebuffer(target, id);
+            ;
         }
     }
 
@@ -494,12 +466,12 @@ impl Context {
             None => &0,
         };
         unsafe {
-            self.inner.DeleteFramebuffers(1, id);
+            ;
         }
     }
 
     pub fn check_framebuffer_status(&self) -> Result<(), String> {
-        let status = unsafe { self.inner.CheckFramebufferStatus(consts::FRAMEBUFFER) };
+        let status = unsafe { consts::FRAMEBUFFER_COMPLETE };
 
         match status {
             consts::FRAMEBUFFER_COMPLETE => Ok(()),
@@ -541,18 +513,7 @@ impl Context {
         filter: u32,
     ) {
         unsafe {
-            self.inner.BlitFramebuffer(
-                src_x0 as i32,
-                src_y0 as i32,
-                src_x1 as i32,
-                src_y1 as i32,
-                dst_x0 as i32,
-                dst_y0 as i32,
-                dst_x1 as i32,
-                dst_y1 as i32,
-                mask,
-                filter,
-            );
+            ;
         }
     }
 
@@ -574,17 +535,12 @@ impl Context {
             //
             // Making an fb is not neccesary with osmesa, however, can't be bothered
             // to have a different code path.
-            self.inner.GenRenderbuffers(1, &mut render_buf);
+            ;
             self.resize_renderbuffer_storage(render_buf, pixel_format, width, height)
                 .ok()?;
-            self.inner.GenFramebuffers(1, &mut fb);
-            self.inner.BindFramebuffer(consts::FRAMEBUFFER, fb);
-            self.inner.FramebufferRenderbuffer(
-                consts::FRAMEBUFFER,
-                consts::COLOR_ATTACHMENT0,
-                consts::RENDERBUFFER,
-                render_buf,
-            );
+            ;
+            ;
+            ;
 
         }
         Some((fb, render_buf))
@@ -598,14 +554,8 @@ impl Context {
         height: usize,
     ) -> Result<(), Error> {
         unsafe {
-            self.inner
-                .BindRenderbuffer(consts::RENDERBUFFER, render_buf_id);
-            self.inner.RenderbufferStorage(
-                consts::RENDERBUFFER,
-                pixel_format,
-                width as _,
-                height as _,
-            );
+            ;
+            ;
         }
         return Ok(());
     }
@@ -616,101 +566,95 @@ impl Context {
         renderbuffer_id: crate::context::Renderbuffer,
     ) {
         unsafe {
-            self.inner.DeleteFramebuffers(1, &framebuffer_id);
-            self.inner.DeleteRenderbuffers(1, &renderbuffer_id);
+            ;
+            ;
         }
     }
 
     pub fn viewport(&self, x: i32, y: i32, width: usize, height: usize) {
         unsafe {
-            self.inner.Viewport(x, y, width as i32, height as i32);
+            ;
         }
     }
 
     pub fn clear_color(&self, red: f32, green: f32, blue: f32, alpha: f32) {
         unsafe {
-            self.inner.ClearColor(red, green, blue, alpha);
+            ;
         }
     }
 
     pub fn clear_depth(&self, depth: f32) {
         unsafe {
-            self.inner.ClearDepth(depth as f64);
+            ;
         }
     }
 
     pub fn clear(&self, mask: u32) {
         unsafe {
-            self.inner.Clear(mask);
+            ;
         }
     }
 
     pub fn enable(&self, cap: u32) {
         unsafe {
-            self.inner.Enable(cap);
+            ;
         }
     }
 
     pub fn disable(&self, cap: u32) {
         unsafe {
-            self.inner.Disable(cap);
+            ;
         }
     }
 
     pub fn blend_func(&self, sfactor: u32, dfactor: u32) {
         unsafe {
-            self.inner.BlendFunc(sfactor, dfactor);
+            ;
         }
     }
 
     pub fn blend_func_separate(&self, src_rgb: u32, dst_rgb: u32, src_alpha: u32, dst_alpha: u32) {
         unsafe {
-            self.inner
-                .BlendFuncSeparate(src_rgb, dst_rgb, src_alpha, dst_alpha);
+            ;
         }
     }
 
     pub fn blend_equation(&self, mode: u32) {
         unsafe {
-            self.inner.BlendEquation(mode);
+            ;
         }
     }
 
     pub fn blend_equation_separate(&self, mode_rgb: u32, mode_alpha: u32) {
         unsafe {
-            self.inner.BlendEquationSeparate(mode_rgb, mode_alpha);
+            ;
         }
     }
 
     pub fn cull_face(&self, mode: u32) {
         unsafe {
-            self.inner.CullFace(mode);
+            ;
         }
     }
 
     pub fn depth_func(&self, func: u32) {
         unsafe {
-            self.inner.DepthFunc(func);
+            ;
         }
     }
 
     pub fn color_mask(&self, red: bool, green: bool, blue: bool, alpha: bool) {
         unsafe {
-            self.inner.ColorMask(
-                if red { consts::TRUE } else { consts::FALSE },
-                if green { consts::TRUE } else { consts::FALSE },
-                if blue { consts::TRUE } else { consts::FALSE },
-                if alpha { consts::TRUE } else { consts::FALSE },
-            );
+            ;
         }
     }
 
     pub fn depth_mask(&self, flag: bool) {
         unsafe {
             if flag {
-                self.inner.DepthMask(consts::TRUE);
+                ;
             } else {
-                self.inner.DepthMask(consts::FALSE);
+                ;
             }
         }
     }
@@ -718,26 +662,26 @@ impl Context {
     pub fn create_texture(&self) -> Option<Texture> {
         let mut id: u32 = 0;
         unsafe {
-            self.inner.GenTextures(1, &mut id);
+            ;
         }
         Some(id)
     }
 
     pub fn active_texture(&self, texture: u32) {
         unsafe {
-            self.inner.ActiveTexture(texture);
+            ;
         }
     }
 
     pub fn bind_texture(&self, target: u32, texture: &Texture) {
         unsafe {
-            self.inner.BindTexture(target, *texture);
+            ;
         }
     }
 
     pub fn generate_mipmap(&self, target: u32) {
         unsafe {
-            self.inner.GenerateMipmap(target);
+            ;
         }
     }
 
@@ -750,13 +694,7 @@ impl Context {
         height: u32,
     ) {
         unsafe {
-            self.inner.TexStorage2D(
-                target,
-                levels as i32,
-                internalformat,
-                width as i32,
-                height as i32,
-            );
+            ;
         }
     }
 
@@ -770,14 +708,7 @@ impl Context {
         depth: u32,
     ) {
         unsafe {
-            self.inner.TexStorage3D(
-                target,
-                levels as i32,
-                internalformat,
-                width as i32,
-                height as i32,
-                depth as i32,
-            );
+            ;
         }
     }
 
@@ -793,17 +724,7 @@ impl Context {
         data_type: u32,
     ) {
         unsafe {
-            self.inner.TexImage2D(
-                target,
-                level as i32,
-                internalformat as i32,
-                width as i32,
-                height as i32,
-                border as i32,
-                format,
-                data_type,
-                std::ptr::null() as *const consts::types::GLvoid,
-            );
+            ;
         }
     }
 
@@ -820,17 +741,7 @@ impl Context {
         pixels: &[u8],
     ) {
         unsafe {
-            self.inner.TexImage2D(
-                target,
-                level as i32,
-                internalformat as i32,
-                width as i32,
-                height as i32,
-                border as i32,
-                format,
-                data_type,
-                pixels.as_ptr() as *const consts::types::GLvoid,
-            );
+            ;
         }
     }
 
@@ -847,17 +758,6 @@ impl Context {
         pixels: &[u8],
     ) {
         unsafe {
-            self.inner.TexSubImage2D(
-                target,
-                level as i32,
-                x_offset as i32,
-                y_offset as i32,
-                width as i32,
-                height as i32,
-                format,
-                data_type,
-                pixels.as_ptr() as *const consts::types::GLvoid,
-            );
         }
     }
 
@@ -874,17 +774,9 @@ impl Context {
         pixels: &[f32],
     ) {
         unsafe {
-            self.inner.TexImage2D(
-                target,
-                level as i32,
-                internalformat as i32,
-                width as i32,
-                height as i32,
-                border as i32,
-                format,
-                data_type,
-                pixels.as_ptr() as *const consts::types::GLvoid,
-            );
+            /* not used in stub
+            ;
+            */
         }
     }
 
@@ -901,17 +793,9 @@ impl Context {
         pixels: &[f32],
     ) {
         unsafe {
-            self.inner.TexSubImage2D(
-                target,
-                level as i32,
-                x_offset as i32,
-                y_offset as i32,
-                width as i32,
-                height as i32,
-                format,
-                data_type,
-                pixels.as_ptr() as *const consts::types::GLvoid,
-            );
+            /* not used in stub
+            ;
+            */
         }
     }
 
@@ -927,18 +811,9 @@ impl Context {
         data_type: u32,
     ) {
         unsafe {
-            self.inner.TexImage3D(
-                target,
-                level as i32,
-                internalformat as i32,
-                width as i32,
-                height as i32,
-                depth as i32,
-                0,
-                format,
-                data_type,
-                std::ptr::null() as *const consts::types::GLvoid,
-            );
+            /* not used in stub
+            ;
+            */
         }
     }
 
@@ -956,30 +831,20 @@ impl Context {
         pixels: &[u16],
     ) {
         unsafe {
-            self.inner.TexImage3D(
-                target,
-                level as i32,
-                internalformat as i32,
-                width as i32,
-                height as i32,
-                depth as i32,
-                border as i32,
-                format,
-                data_type,
-                pixels.as_ptr() as *const consts::types::GLvoid,
-            );
+            /* not used in stub
+            ;
+            */
         }
     }
 
     pub fn tex_parameteri(&self, target: u32, pname: u32, param: i32) {
         unsafe {
-            self.inner.TexParameteri(target, pname, param);
+            // not used in stub // ;
         }
     }
 
     pub fn delete_texture(&self, texture: &Texture) {
         unsafe {
-            self.inner.DeleteTextures(1, texture);
         }
     }
 
@@ -992,8 +857,6 @@ impl Context {
         level: u32,
     ) {
         unsafe {
-            self.inner
-                .FramebufferTexture2D(target, attachment, textarget, *texture, level as i32);
         }
     }
 
@@ -1006,111 +869,41 @@ impl Context {
         layer: u32,
     ) {
         unsafe {
-            self.inner.FramebufferTextureLayer(
-                target,
-                attachment,
-                *texture,
-                level as i32,
-                layer as i32,
-            );
         }
     }
 
     pub fn draw_arrays(&self, mode: u32, first: u32, count: u32) {
         unsafe {
-            self.inner.DrawArrays(
-                mode as consts::types::GLenum,
-                first as i32, // starting index in the enabled arrays
-                count as i32, // number of vertices to be rendered
-            );
         }
     }
 
-    pub fn draw_arrays_instanced(&self, mode: u32, first: u32, count: u32, instance_count: u32) {
-        unsafe {
-            self.inner.DrawArraysInstanced(
-                mode as consts::types::GLenum,
-                first as i32,                  // starting index in the enabled arrays
-                count as consts::types::GLint, // number of vertices to be rendered
-                instance_count as consts::types::GLint,
-            );
-        }
+pub fn draw_arrays_instanced(&self, mode: u32, first: u32, count: u32, instance_count: u32) {
+    unsafe {
     }
+}
 
-    pub fn draw_elements(&self, mode: u32, count: u32, data_type: u32, offset: u32) {
-        unsafe {
-            self.inner.DrawElements(
-                mode as consts::types::GLenum,
-                count as consts::types::GLint, // number of indices to be rendered
-                data_type as consts::types::GLenum,
-                byte_size_for_type(data_type, offset) as *const consts::types::GLvoid, // starting index in the enabled arrays
-            );
-        }
+pub fn draw_elements(&self, mode: u32, count: u32, data_type: u32, offset: u32) {
+    unsafe {
+        /* // not used in stub
+        ;
+        */
     }
+}
 
-    pub fn draw_elements_instanced(
-        &self,
-        mode: u32,
-        count: u32,
-        data_type: u32,
-        offset: u32,
-        instance_count: u32,
-    ) {
-        unsafe {
-            self.inner.DrawElementsInstanced(
-                mode as consts::types::GLenum,
-                count as consts::types::GLint, // number of indices to be rendered
-                data_type as consts::types::GLenum,
-                byte_size_for_type(data_type, offset) as *const consts::types::GLvoid, // starting index in the enabled arrays
-                instance_count as consts::types::GLint,
-            );
-        }
+pub fn draw_elements_instanced(
+    &self,
+    mode: u32,
+    count: u32,
+    data_type: u32,
+    offset: u32,
+    instance_count: u32,
+) {
+    unsafe {
+        /* // not used in stub
+        ;
+        */
     }
-
-    pub fn read_pixels(
-        &self,
-        x: u32,
-        y: u32,
-        width: u32,
-        height: u32,
-        format: u32,
-        data_type: u32,
-    ) {
-        unsafe {
-            self.inner.ReadPixels(
-                x as i32,
-                y as i32,
-                width as i32,
-                height as i32,
-                format,
-                data_type,
-                0 as *mut consts::types::GLvoid,
-            );
-        }
-    }
-
-    pub fn read_pixels_with_u8_data(
-        &self,
-        x: u32,
-        y: u32,
-        width: u32,
-        height: u32,
-        format: u32,
-        data_type: u32,
-        dst_data: &mut [u8],
-    ) {
-        unsafe {
-            self.inner.ReadPixels(
-                x as i32,
-                y as i32,
-                width as i32,
-                height as i32,
-                format,
-                data_type,
-                dst_data.as_ptr() as *mut consts::types::GLvoid,
-            )
-        }
-    }
+}
 
     pub fn read_pixels_with_f32_data(
         &self,
@@ -1122,17 +915,7 @@ impl Context {
         data_type: u32,
         dst_data: &mut [f32],
     ) {
-        unsafe {
-            self.inner.ReadPixels(
-                x as i32,
-                y as i32,
-                width as i32,
-                height as i32,
-                format,
-                data_type,
-                dst_data.as_ptr() as *mut consts::types::GLvoid,
-            )
-        }
+        unsafe {}
     }
 
     pub fn read_pixels_with_u16_data(
@@ -1146,53 +929,108 @@ impl Context {
         dst_data: &mut [u16],
     ) {
         unsafe {
-            self.inner.PixelStorei(consts::PACK_ALIGNMENT, 1);
-            self.inner.ReadPixels(
-                x as i32,
-                y as i32,
-                width as i32,
-                height as i32,
-                format,
-                data_type,
-                dst_data.as_mut_ptr() as *mut consts::types::GLvoid,
-            )
+
         }
     }
 
-    pub fn flush(&self) {
-        unsafe {
-            self.inner.Flush();
-        }
+pub fn read_pixels(
+    &self,
+    x: u32,
+    y: u32,
+    width: u32,
+    height: u32,
+    format: u32,
+    data_type: u32,
+) {
+    unsafe {
+        /* // not used in stub
+        self.inner.ReadPixels(
+            x as i32,
+            y as i32,
+            width as i32,
+            height as i32,
+            format,
+            data_type,
+            0 as *mut consts::types::GLvoid,
+        );
+        */
     }
+}
 
-    pub fn fence_sync(&self) -> Sync {
-        unsafe { self.inner.FenceSync(consts::SYNC_GPU_COMMANDS_COMPLETE, 0) }
+pub fn read_pixels_with_u8_data(
+    &self,
+    x: u32,
+    y: u32,
+    width: u32,
+    height: u32,
+    format: u32,
+    data_type: u32,
+    dst_data: &mut [u8],
+) {
+    unsafe {
+        /* // not used in stub
+        ;
+        self.inner.ReadPixels(
+            x as i32,
+            y as i32,
+            width as i32,
+            height as i32,
+            format,
+            data_type,
+            dst_data.as_mut_ptr() as *mut consts::types::GLvoid,
+        )
+        */
     }
+}
 
-    pub fn client_wait_sync(&self, sync: &Sync, flags: u32, timeout: u32) -> u32 {
-        unsafe { self.inner.ClientWaitSync(*sync, flags, timeout as u64) }
+pub fn flush(&self) {
+    unsafe {
+        /* // not used in stub
+        self.inner.Flush();
+        */
     }
+}
 
-    pub fn delete_sync(&self, sync: &Sync) {
-        unsafe {
-            self.inner.DeleteSync(*sync);
-        }
-    }
+pub fn fence_sync(&self) -> Sync {
+    unsafe {
+        /* // not used in stub
+        self.inner.FenceSync(consts::SYNC_GPU_COMMANDS_COMPLETE, 0)
+         */
+        return std::ptr::null();
+}
+}
+
+pub fn client_wait_sync(&self, sync: &Sync, flags: u32, timeout: u32) -> u32 {
+unsafe {
+    /* // not used in stub
+    self.inner.ClientWaitSync(*sync, flags, timeout as u64)
+    */
+    return 0;
+}
+}
+
+pub fn delete_sync(&self, sync: &Sync) {
+unsafe {
+    /* // not used in stub
+    ;
+    */
+}
+}
 }
 
 fn create_whitespace_cstring_with_len(len: usize) -> std::ffi::CString {
-    // allocate buffer of correct size
-    let mut buffer: Vec<u8> = Vec::with_capacity(len + 1);
-    // fill it with len spaces
-    buffer.extend([b' '].iter().cycle().take(len));
-    // convert buffer to CString
-    unsafe { std::ffi::CString::from_vec_unchecked(buffer) }
+// allocate buffer of correct size
+let mut buffer: Vec<u8> = Vec::with_capacity(len + 1);
+// fill it with len spaces
+buffer.extend([b' '].iter().cycle().take(len));
+// convert buffer to CString
+unsafe { std::ffi::CString::from_vec_unchecked(buffer) }
 }
 
 fn byte_size_for_type(data_type: u32, count: u32) -> u32 {
-    match data_type {
-        consts::FLOAT => count * std::mem::size_of::<f32>() as u32,
-        consts::UNSIGNED_INT => count * std::mem::size_of::<u32>() as u32,
-        _ => 0,
-    }
+match data_type {
+    consts::FLOAT => count * std::mem::size_of::<f32>() as u32,
+    consts::UNSIGNED_INT => count * std::mem::size_of::<u32>() as u32,
+    _ => 0,
+}
 }
