@@ -303,6 +303,26 @@ impl Context {
             .unwrap();
     }
 
+    /// Sets the unpack alignment for textures. See https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glPixelStore.xhtml
+    ///
+    /// # Arguments
+    ///
+    /// * `alignment` - Specifies the alignment requirements for the start of each pixel row in memory. The allowable values are 1, 2, 4 and 8.
+    ///
+    pub fn set_unpack_alignment(&self, alignment: i32) {
+        self.inner.pixel_storei(consts::UNPACK_ALIGNMENT, alignment);
+    }
+
+    /// Sets the pack alignment for textures. See https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glPixelStore.xhtml
+    ///
+    /// # Arguments
+    ///
+    /// * `alignment` - Specifies the alignment requirements for the start of each pixel row in memory. The allowable values are 1, 2, 4 and 8.
+    ///
+    pub fn set_pack_alignment(&self, alignment: i32) {
+        self.inner.pixel_storei(consts::PACK_ALIGNMENT, alignment);
+    }
+
     pub fn tex_image_3d_with_u16_data(
         &self,
         target: u32,
