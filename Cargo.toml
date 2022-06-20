@@ -22,6 +22,7 @@ image-io = ["image"] # Additional image functionality, for example loading an im
 obj-io = ["wavefront_obj", "image-io"]
 phong-renderer = [] # Phong forward and deferred renderer.
 debug = [] # Prints OpenGL debug information (only available when NOT building for the wasm32 architecture)
+stub-gl = [] # Allows to initialize a stub three-d context, without OpenGL for testing
 
 [dependencies]
 log = "0.4"
