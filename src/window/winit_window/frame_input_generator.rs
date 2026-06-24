@@ -1,13 +1,14 @@
 use super::FrameInput;
 use crate::control::*;
 use crate::core::*;
-#[cfg(target_arch = "wasm32")]
-use instant::Instant;
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::Instant;
+#[cfg(target_arch = "wasm32")]
+use web_time::Instant;
 use winit::dpi::PhysicalSize;
 use winit::event::TouchPhase;
 use winit::event::WindowEvent;
+use winit::keyboard::PhysicalKey;
 
 ///
 /// Use this to generate [FrameInput] for a new frame with a custom [winit](https://crates.io/crates/winit) window.
@@ -125,24 +126,17 @@ impl FrameInputGenerator {
                 self.window_width = logical_size.width;
                 self.window_height = logical_size.height;
             }
-            WindowEvent::ScaleFactorChanged {
-                scale_factor,
-                new_inner_size,
-            } => {
+            WindowEvent::ScaleFactorChanged { scale_factor, .. } => {
                 self.device_pixel_ratio = *scale_factor;
-                self.viewport = Viewport::new_at_origo(new_inner_size.width, new_inner_size.height);
-                let logical_size = new_inner_size.to_logical(self.device_pixel_ratio);
-                self.window_width = logical_size.width;
-                self.window_height = logical_size.height;
             }
             WindowEvent::Occluded(false) => {
                 self.first_frame = true;
             }
-            WindowEvent::KeyboardInput { input, .. } => {
-                if let Some(keycode) = input.virtual_keycode {
-                    use winit::event::VirtualKeyCode;
-                    let state = input.state == winit::event::ElementState::Pressed;
-                    if let Some(kind) = translate_virtual_key_code(keycode) {
+            WindowEvent::KeyboardInput { event, .. } => {
+                let state = event.state == winit::event::ElementState::Pressed;
+                if let PhysicalKey::Code(keycode) = event.physical_key {
+                    use winit::keyboard::KeyCode;
+                    if let Some(kind) = translate_key_code(keycode) {
                         self.events.push(if state {
                             crate::Event::KeyPress {
                                 kind,
@@ -156,9 +150,7 @@ impl FrameInputGenerator {
                                 handled: false,
                             }
                         });
-                    } else if keycode == VirtualKeyCode::LControl
-                        || keycode == VirtualKeyCode::RControl
-                    {
+                    } else if keycode == KeyCode::ControlLeft || keycode == KeyCode::ControlRight {
                         self.modifiers.ctrl = state;
                         if !cfg!(target_os = "macos") {
                             self.modifiers.command = state;
@@ -166,24 +158,35 @@ impl FrameInputGenerator {
                         self.events.push(crate::Event::ModifiersChange {
                             modifiers: self.modifiers,
                         });
-                    } else if keycode == VirtualKeyCode::LAlt || keycode == VirtualKeyCode::RAlt {
+                    } else if keycode == KeyCode::AltLeft || keycode == KeyCode::AltRight {
                         self.modifiers.alt = state;
                         self.events.push(crate::Event::ModifiersChange {
                             modifiers: self.modifiers,
                         });
-                    } else if keycode == VirtualKeyCode::LShift || keycode == VirtualKeyCode::RShift
-                    {
+                    } else if keycode == KeyCode::ShiftLeft || keycode == KeyCode::ShiftRight {
                         self.modifiers.shift = state;
                         self.events.push(crate::Event::ModifiersChange {
                             modifiers: self.modifiers,
                         });
-                    } else if (keycode == VirtualKeyCode::LWin || keycode == VirtualKeyCode::RWin)
+                    } else if (keycode == KeyCode::SuperLeft || keycode == KeyCode::SuperRight)
                         && cfg!(target_os = "macos")
                     {
                         self.modifiers.command = state;
                         self.events.push(crate::Event::ModifiersChange {
                             modifiers: self.modifiers,
                         });
+                    }
+                }
+                if state {
+                    if let Some(text) = &event.text {
+                        for ch in text.chars() {
+                            if is_printable_char(ch)
+                                && !self.modifiers.ctrl
+                                && !self.modifiers.command
+                            {
+                                self.events.push(crate::Event::Text(ch.to_string()));
+                            }
+                        }
                     }
                 }
             }
@@ -213,8 +216,7 @@ impl FrameInputGenerator {
                     });
                 }
             }
-            WindowEvent::TouchpadMagnify { delta, .. } => {
-                // Renamed to PinchGesture in winit 0.30.0
+            WindowEvent::PinchGesture { delta, .. } => {
                 if let Some(position) = self.cursor_pos {
                     let d = *delta as f32;
                     self.events.push(crate::Event::PinchGesture {
@@ -225,8 +227,7 @@ impl FrameInputGenerator {
                     });
                 }
             }
-            WindowEvent::TouchpadRotate { delta, .. } => {
-                // Renamed to RotationGesture in winit 0.30.0
+            WindowEvent::RotationGesture { delta, .. } => {
                 if let Some(position) = self.cursor_pos {
                     let d = radians(*delta);
                     self.events.push(crate::Event::RotationGesture {
@@ -288,11 +289,6 @@ impl FrameInputGenerator {
                     handled: false,
                 });
                 self.cursor_pos = Some(position);
-            }
-            WindowEvent::ReceivedCharacter(ch)
-                if is_printable_char(*ch) && !self.modifiers.ctrl && !self.modifiers.command =>
-            {
-                self.events.push(crate::Event::Text(ch.to_string()));
             }
             WindowEvent::CursorEntered { .. } => {
                 self.events.push(crate::Event::MouseEnter);
@@ -402,19 +398,19 @@ fn is_printable_char(chr: char) -> bool {
     !is_in_private_use_area && !chr.is_ascii_control()
 }
 
-fn translate_virtual_key_code(key: winit::event::VirtualKeyCode) -> Option<crate::Key> {
-    use winit::event::VirtualKeyCode::*;
+fn translate_key_code(key: winit::keyboard::KeyCode) -> Option<crate::Key> {
+    use winit::keyboard::KeyCode::*;
 
     Some(match key {
-        Down => Key::ArrowDown,
-        Left => Key::ArrowLeft,
-        Right => Key::ArrowRight,
-        Up => Key::ArrowUp,
+        ArrowDown => Key::ArrowDown,
+        ArrowLeft => Key::ArrowLeft,
+        ArrowRight => Key::ArrowRight,
+        ArrowUp => Key::ArrowUp,
 
         Escape => Key::Escape,
         Tab => Key::Tab,
-        Back => Key::Backspace,
-        Return | NumpadEnter => Key::Enter,
+        Backspace => Key::Backspace,
+        Enter | NumpadEnter => Key::Enter,
         Space => Key::Space,
 
         Insert => Key::Insert,
@@ -423,57 +419,57 @@ fn translate_virtual_key_code(key: winit::event::VirtualKeyCode) -> Option<crate
         End => Key::End,
         PageUp => Key::PageUp,
         PageDown => Key::PageDown,
-        Snapshot | Sysrq => Key::Snapshot,
+        PrintScreen => Key::Snapshot,
 
-        Mute => Key::Mute,
-        VolumeDown => Key::VolumeDown,
-        VolumeUp => Key::VolumeUp,
+        AudioVolumeMute => Key::Mute,
+        AudioVolumeDown => Key::VolumeDown,
+        AudioVolumeUp => Key::VolumeUp,
 
         Copy => Key::Copy,
         Paste => Key::Paste,
         Cut => Key::Cut,
 
-        Equals | NumpadEquals => Key::Equals,
+        Equal | NumpadEqual => Key::Equals,
         Minus | NumpadSubtract => Key::Minus,
-        Plus | NumpadAdd => Key::Plus,
+        NumpadAdd => Key::Plus,
 
-        Key0 | Numpad0 => Key::Num0,
-        Key1 | Numpad1 => Key::Num1,
-        Key2 | Numpad2 => Key::Num2,
-        Key3 | Numpad3 => Key::Num3,
-        Key4 | Numpad4 => Key::Num4,
-        Key5 | Numpad5 => Key::Num5,
-        Key6 | Numpad6 => Key::Num6,
-        Key7 | Numpad7 => Key::Num7,
-        Key8 | Numpad8 => Key::Num8,
-        Key9 | Numpad9 => Key::Num9,
+        Digit0 | Numpad0 => Key::Num0,
+        Digit1 | Numpad1 => Key::Num1,
+        Digit2 | Numpad2 => Key::Num2,
+        Digit3 | Numpad3 => Key::Num3,
+        Digit4 | Numpad4 => Key::Num4,
+        Digit5 | Numpad5 => Key::Num5,
+        Digit6 | Numpad6 => Key::Num6,
+        Digit7 | Numpad7 => Key::Num7,
+        Digit8 | Numpad8 => Key::Num8,
+        Digit9 | Numpad9 => Key::Num9,
 
-        A => Key::A,
-        B => Key::B,
-        C => Key::C,
-        D => Key::D,
-        E => Key::E,
-        F => Key::F,
-        G => Key::G,
-        H => Key::H,
-        I => Key::I,
-        J => Key::J,
-        K => Key::K,
-        L => Key::L,
-        M => Key::M,
-        N => Key::N,
-        O => Key::O,
-        P => Key::P,
-        Q => Key::Q,
-        R => Key::R,
-        S => Key::S,
-        T => Key::T,
-        U => Key::U,
-        V => Key::V,
-        W => Key::W,
-        X => Key::X,
-        Y => Key::Y,
-        Z => Key::Z,
+        KeyA => Key::A,
+        KeyB => Key::B,
+        KeyC => Key::C,
+        KeyD => Key::D,
+        KeyE => Key::E,
+        KeyF => Key::F,
+        KeyG => Key::G,
+        KeyH => Key::H,
+        KeyI => Key::I,
+        KeyJ => Key::J,
+        KeyK => Key::K,
+        KeyL => Key::L,
+        KeyM => Key::M,
+        KeyN => Key::N,
+        KeyO => Key::O,
+        KeyP => Key::P,
+        KeyQ => Key::Q,
+        KeyR => Key::R,
+        KeyS => Key::S,
+        KeyT => Key::T,
+        KeyU => Key::U,
+        KeyV => Key::V,
+        KeyW => Key::W,
+        KeyX => Key::X,
+        KeyY => Key::Y,
+        KeyZ => Key::Z,
 
         F1 => Key::F1,
         F2 => Key::F2,
@@ -500,19 +496,16 @@ fn translate_virtual_key_code(key: winit::event::VirtualKeyCode) -> Option<crate
         F23 => Key::F23,
         F24 => Key::F24,
 
-        Apostrophe => Key::Apostrophe,
-        Asterisk | NumpadMultiply => Key::Asterisk,
+        Quote => Key::Apostrophe,
+        NumpadMultiply | NumpadStar => Key::Asterisk,
         Backslash => Key::Backslash,
-        Caret => Key::Caret,
-        Colon => Key::Colon,
-        Comma => Key::Comma,
-        Grave => Key::Grave,
-        LBracket => Key::LBracket,
-        Period | NumpadDecimal | NumpadComma => Key::Period,
-        RBracket => Key::RBracket,
+        Comma | NumpadComma => Key::Comma,
+        Backquote => Key::Grave,
+        BracketLeft => Key::LBracket,
+        Period | NumpadDecimal => Key::Period,
+        BracketRight => Key::RBracket,
         Semicolon => Key::Semicolon,
         Slash | NumpadDivide => Key::Slash,
-        Underline => Key::Underline,
 
         _ => {
             return None;
